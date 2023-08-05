@@ -1,0 +1,408 @@
+@extends('layout')
+
+@section('page', 'Dashboard')
+
+@section('sub_page', 'Dashboard')
+
+@section('css')
+<style>
+    /* .small-box h3 {
+        font-size: 1.25em;
+    } */
+
+    @media (max-width: 576px) {
+        .small-box h3 {
+            font-size: 1.5em;
+        }
+    }
+</style>
+@endsection
+
+@section('content')
+    <div class="row">
+        <!-- Statistiques des transactions par mois -->
+        <div class="col-lg-6 col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center">Statistiques des transactions par mois</h2>
+                    <form action="{{ route('dashboard.index') }}" method="get">
+                        <div class="input-group mt-3">
+                            <select name="year" class="form-control">
+                                @for ($year = now()->year; $year >= 2020; $year--)
+                                    <option value="{{ $year }}" @if ($year == $selectedYear) selected @endif>
+                                        {{ $year }}</option>
+                                @endfor
+                            </select>
+                            <button type="submit" class="btn btn-primary">Chercher</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <canvas id="transactionsChart" style="height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row col-lg-6 col-md-12">
+                    <!-- Montant moyen transféré par transaction -->
+        <div class="col-12">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>{{ number_format($averageAmount, 0, ',', ' ') }} FCFA</h3>
+                    <p>Montant moyen transféré par transaction</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+            </div>
+        </div>
+            <!-- Nombre total de transactions effectuées -->
+            <div class="col-12">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3 >{{ $totalTransactions }}</h3>
+                        <p>Nombre total de transactions effectuées</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Montant total transféré dans toutes les transactions -->
+            <div class="col-12">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>{{ number_format($totalAmountTransferred, 0, ',', ' ') }} FCFA</h3>
+                        <p>Montant total transféré dans toutes les transactions</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="row">
+        <!-- Graphique des transactions par ville d'origine et de destination -->
+        <div class="col-lg-6 col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center">Transactions par ville d'origine et de destination</h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="transactionsByCityChart" style="height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Montant total transféré par ville d'origine et de destination -->
+        <div class="col-lg-6 col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center">Montant total transféré par ville d'origine et de destination</h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="amountByCityChart" style="height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Nombre total d'utilisateurs enregistrés -->
+        <div class="col-lg-3 col-md-6">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h3>{{ $totalUsers }}</h3>
+                    <p>Nombre total d'utilisateurs enregistrés</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nombre d'utilisateurs connectés -->
+        <div class="col-lg-3 col-md-6">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>{{ $connectedUsers }}</h3>
+                    <p>Nombre d'utilisateurs connectés</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nombre d'utilisateurs par rôle -->
+        <div class="col-lg-3 col-md-6">
+            <div class="small-box bg-secondary">
+                <div class="inner">
+                    <h3>{{ $adminUsers }}</h3>
+                    <p>Administrateurs</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>{{ $regularUsers }}</h3>
+                    <p>Utilisateurs</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Nombre d'utilisateurs par localisation -->
+        <div class="col-lg-6 col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center">Nombre d'utilisateurs par localisation</h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="usersByLocationChart" style="height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nombre d'utilisateurs enregistrés par mois -->
+        <div class="col-lg-6 col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center">Nombre d'utilisateurs enregistrés par mois</h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="usersByMonthChart" style="height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Graphique des transactions par utilisateur -->
+        <div class="col-lg-6 col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center">Transactions par utilisateur</h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="transactionsByUserChart" style="height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('script')
+    <!-- Chart.js -->
+    <script src="{{ asset('plugins/chart.js/Chart.min.js') }}"></script>
+    <script>
+        var months = @json($months);
+        var selectedYear = @json($selectedYear);
+
+        // Data for the chart
+        var data = {
+            labels: Object.values(months),
+            datasets: [{
+                    label: 'En cours',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    data: Object.values({!! json_encode($transactionsInCourse) !!}),
+                },
+                {
+                    label: 'Retirées',
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    data: Object.values({!! json_encode($transactionsWithdrawn) !!}),
+                },
+                {
+                    label: 'Annulées',
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                    data: Object.values({!! json_encode($transactionsCancelled) !!}),
+                }
+            ]
+        };
+
+        // Data for the transactions by city chart
+        var dataByCity = {
+            labels: Object.keys({!! json_encode(array_merge($transactionsByOriginCity->toArray(), $transactionsByDestinationCity->toArray())) !!}),
+            datasets: [{
+                    label: 'Transactions par ville d\'origine',
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                    data: Object.values({!! json_encode($transactionsByOriginCity->toArray()) !!})
+                },
+                {
+                    label: 'Transactions par ville de destination',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    data: Object.values({!! json_encode($transactionsByDestinationCity->toArray()) !!})
+                }
+            ]
+        };
+
+        // Data for the amount by city chart
+        var amountByCityData = {
+            labels: Object.keys({!! json_encode(array_merge($amountByOriginCity->toArray(), $amountByDestinationCity->toArray())) !!}),
+            datasets: [{
+                    label: 'Montant total transféré par ville d\'origine',
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                    data: Object.values({!! json_encode($amountByOriginCity->toArray()) !!})
+                },
+                {
+                    label: 'Montant total transféré par ville de destination',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    data: Object.values({!! json_encode($amountByDestinationCity->toArray()) !!})
+                }
+            ]
+        };
+
+        // Data for the users by location chart
+        var usersByLocationData = {
+            labels: Object.keys({!! json_encode($usersByLocation->toArray()) !!}),
+            datasets: [{
+                label: 'Nombre d\'utilisateurs',
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                data: Object.values({!! json_encode($usersByLocation->toArray()) !!})
+            }]
+        };
+
+        // Data for the users by month chart
+        var usersByMonthData = {
+            labels: Object.keys({!! json_encode($usersByMonth) !!}),
+            datasets: [{
+                label: 'Nombre d\'utilisateurs enregistrés',
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                data: Object.values({!! json_encode($usersByMonth) !!})
+            }]
+        };
+
+        // Data pour le graphique des transactions par utilisateur
+        var transactionsByUserData = {
+            labels: Object.keys({!! json_encode($transactionsByUser) !!}),
+            datasets: [{
+                label: 'Transactions par utilisateur',
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                data: Object.values({!! json_encode($transactionsByUser) !!})
+            }]
+        };
+
+
+
+
+        // Options for the charts
+        var options = {
+            scales: {
+                x: {
+                    stacked: true,
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,
+                    }
+                }
+            }
+        };
+
+        // Create the transactions chart
+        var ctx = document.getElementById('transactionsChart').getContext('2d');
+        var transactionsChart = new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: options
+        });
+
+        // Create the transactions by city chart
+        var ctxByCity = document.getElementById('transactionsByCityChart').getContext('2d');
+        var transactionsByCityChart = new Chart(ctxByCity, {
+            type: 'bar',
+            data: dataByCity,
+            options: options
+        });
+
+        // Create the amount by city chart
+        var ctxByAmount = document.getElementById('amountByCityChart').getContext('2d');
+        var amountByCityChart = new Chart(ctxByAmount, {
+            type: 'bar',
+            data: amountByCityData,
+            options: options
+        });
+
+        // Create the users by location chart
+        var ctxByLocation = document.getElementById('usersByLocationChart').getContext('2d');
+        var usersByLocationChart = new Chart(ctxByLocation, {
+            type: 'bar',
+            data: usersByLocationData,
+            options: options
+        });
+
+        var ctxByMonth = document.getElementById('usersByMonthChart').getContext('2d');
+        var usersByMonthChart = new Chart(ctxByMonth, {
+            type: 'bar',
+            data: usersByMonthData,
+            options: options
+        });
+
+
+        // Créer le graphique des transactions par utilisateur
+        var ctxTransactionsByUser = document.getElementById('transactionsByUserChart').getContext('2d');
+        var transactionsByUserChart = new Chart(ctxTransactionsByUser, {
+            type: 'bar',
+            data: transactionsByUserData,
+            options: options
+        });
+
+        var usersRoleData = {
+            labels: ['Administrateurs', 'Utilisateurs'],
+            datasets: [{
+                data: [{{ $adminUsers }}, {{ $regularUsers }}],
+                backgroundColor: ['rgba(255, 99, 132, 0.5)', 'rgba(54, 162, 235, 0.5)'],
+                borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)'],
+                borderWidth: 1,
+            }]
+        };
+
+        options = {
+            cutout: '80%', // Pour définir l'épaisseur du trou intérieur (80% signifie que 20% du rayon est utilisé pour le trou)
+        };
+        // Créer le graphique Doughnut
+        var ctxUserRole = document.getElementById('usersRoleChart').getContext('2d');
+        var usersRoleChart = new Chart(ctxUserRole, {
+            type: 'doughnut',
+            data: usersRoleData,
+            options: options
+        });
+    </script>
+@endsection
